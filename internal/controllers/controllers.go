@@ -3,7 +3,6 @@ package controllers
 import (
 	"log"
 	"prea/internal/common"
-
 	"github.com/gin-gonic/gin"
 )
 

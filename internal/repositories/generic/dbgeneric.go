@@ -2,10 +2,9 @@ package generic
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"prea/internal/common"
 	"prea/internal/domain"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -60,6 +59,7 @@ func (dbg DBGeneric[T]) Create(data T) (T, error) {
 	keys, values := ModelToInsert(data)
 
 	sql := "insert into " + dbg.Model.Table() + keys + " values " + values
+
 	_, err := Conn.Exec(Ctx, sql)
 
 	if err != nil {
@@ -105,7 +105,8 @@ func (dbg DBGeneric[T]) GetLast() (T, error) {
 
 	var item T
 	for rows.Next() {
-		err := rows.Scan(ModelToDest(&item))
+		err := rows.Scan(ModelToDest(&item)...)
+
 		if err != nil {
 			return item, err
 		}

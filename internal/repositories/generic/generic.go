@@ -6,6 +6,7 @@ import (
 	"prea/internal/domain"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func GetLogger() *log.Logger {
@@ -43,8 +44,13 @@ func ModelToInsert[T domain.IModel](data T) (string, string) {
 
 	for i := range refls.NumField() {
 		if refls.Field(i).Name != data.Pk() && !vals.Field(i).IsZero() {
+			val := vals.Field(i).String()
+			if reflect.TypeOf(val).Kind() == reflect.String {
+				val = `'` + val + `'`
+			}
+			
 			k += strings.ToLower(refls.Field(i).Name) + sep
-			v += vals.Field(i).String() + sep
+			v +=  val + sep
 		}
 	}
 
@@ -63,7 +69,11 @@ func ModelToUpdate[T domain.IModel](data T) string {
 			key := strings.ToLower(refls.Field(i).Name)
 			val := vals.Field(i).String()
 
-			if reflect.TypeOf(val).Kind() == reflect.String {
+			if refls.Field(i).Type.Kind() == reflect.String {
+				val = `'` + val + `'`
+			}
+
+			if _, err := time.Parse(time.DateTime, val); err == nil {
 				val = `'` + val + `'`
 			}
 

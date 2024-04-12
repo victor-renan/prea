@@ -14,7 +14,7 @@ type TextRes struct {
 }
 
 func Response(ctx *gin.Context, code int, data any) {
-	ctx.JSON(code, data)
+	ctx.IndentedJSON(code, data)
 }
 
 func DataRes(ctx *gin.Context, data any, code int) {
