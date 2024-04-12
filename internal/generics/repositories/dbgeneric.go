@@ -1,10 +1,9 @@
-package generic
+package repositories
 
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"prea/internal/common"
-	"prea/internal/domain"
 )
 
 const (
@@ -14,7 +13,7 @@ const (
 var Ctx context.Context
 var Conn *pgxpool.Pool
 
-type DBGeneric[T domain.IModel] struct {
+type DBGeneric[T IModelInjectable] struct {
 	Model T
 }
 

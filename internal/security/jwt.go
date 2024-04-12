@@ -1,15 +1,14 @@
 package security
 
 import (
+	"github.com/golang-jwt/jwt/v5"
 	"prea/internal/common"
 	"time"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
 	DefaultAlg string = "HS256"
-	JwtEnv     string = "JWT_KEY"
+	JwtEnv     string = "JWTKEY"
 )
 
 var SignKey []byte

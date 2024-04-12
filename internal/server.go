@@ -2,11 +2,8 @@ package app
 
 import (
 	"log"
-	"prea/internal/controllers"
-	"prea/internal/domain/models"
-	"prea/internal/repositories/generic"
-	"prea/internal/services"
-
+	"prea/internal/preas/book"
+	"prea/internal/generics/repositories"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,9 +18,9 @@ type MainServer struct {
 func (srv MainServer) Run() {
 	router := gin.Default()
 
-	controllers.BookController{
-		Service: services.BookService{
-			Repo: generic.DBGeneric[models.Book]{},
+	book.BookController{
+		Service: book.BookService{
+			Repo: repositories.DBGeneric[book.Book]{},
 		},
 	}.ForEngine(router)
 

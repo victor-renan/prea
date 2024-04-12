@@ -1,19 +1,23 @@
-package generic
+package repositories
 
 import (
 	"log"
 	"prea/internal/common"
-	"prea/internal/domain"
 	"reflect"
 	"strings"
 	"time"
 )
 
 func GetLogger() *log.Logger {
-	return common.MakeLogger("repositories/generic")
+	return common.MakeLogger("repositories")
 }
 
-type IGenericRepository[T domain.IModel] interface {
+type IModelInjectable interface {
+	Table() string
+	Pk() string
+}
+
+type IGenericRepository[T IModelInjectable] interface {
 	GetAll() ([]T, error)
 	GetById(id int64) (T, error)
 	Create(data T) (T, error)
@@ -26,6 +30,7 @@ func ModelToDest[T any](data *T) []any {
 	addrs := reflect.ValueOf(data)
 
 	var vals []any
+	
 	elem := addrs.Elem()
 	for i := range elem.NumField() {
 		vals = append(vals, elem.Field(i).Addr().Interface())
@@ -34,7 +39,7 @@ func ModelToDest[T any](data *T) []any {
 	return vals
 }
 
-func ModelToInsert[T domain.IModel](data T) (string, string) {
+func ModelToInsert[T IModelInjectable](data T) (string, string) {
 	refls := reflect.TypeOf(data)
 	vals := reflect.ValueOf(data)
 
@@ -48,16 +53,16 @@ func ModelToInsert[T domain.IModel](data T) (string, string) {
 			if reflect.TypeOf(val).Kind() == reflect.String {
 				val = `'` + val + `'`
 			}
-			
+
 			k += strings.ToLower(refls.Field(i).Name) + sep
-			v +=  val + sep
+			v += val + sep
 		}
 	}
 
 	return strings.TrimSuffix(k, sep) + ")", strings.TrimSuffix(v, sep) + ")"
 }
 
-func ModelToUpdate[T domain.IModel](data T) string {
+func ModelToUpdate[T IModelInjectable](data T) string {
 	refls := reflect.TypeOf(data)
 	vals := reflect.ValueOf(data)
 
