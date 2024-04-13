@@ -5,20 +5,29 @@ import (
 )
 
 type User struct {
-	Id        string    `db:"id" db_type:"uuid" json:"id"`
-	Name      string    `db:"name" db_type:"varchar" json:"name" form:"name" binding:"required"`
-	Username  string    `db:"username" db_type:"varchar" json:"username" form:"username" binding:"required"`
-	Email     string    `db:"email" db_type:"varchar" json:"email" form:"email" binding:"required"`
-	Password  string    `db:"password" db_type:"varchar" json:"description" form:"password" binding:"required"`
-	Profile   int       `db:"profile" db_type:"int" json:"profile" form:"profile" binding:"required"`
-	Token     string    `db:"token" db_type:"text" json:"token" form:"token"`
-	LastLogin time.Time `db:"lastlogin" db_type:"timestamp" json:"lastlogin"`
+	Id        string     `json:"id" form:"-"`
+	Name      string     `json:"name" form:"name" binding:"required"`
+	Username  string     `json:"username" form:"username" binding:"required"`
+	Email     string     `json:"email" form:"email" binding:"required"`
+	Password  string     `json:"-" form:"password" binding:"required"`
+	Profile   int8       `json:"profile" form:"profile" binding:"required"`
+	Token     *string    `json:"token" form:"token"`
+	LastLogin *time.Time `json:"lastlogin" time_format:"2006-01-01 00:00:00"`
+}
+
+type UserCreateDAO struct {
+	Name     string `form:"name" binding:"required"`
+	Username string `form:"username" binding:"required"`
+	Email    string `form:"email" binding:"required"`
+	Password string `form:"password" binding:"required"`
+	Profile  int8   `form:"profile" binding:"required"`
+}
+
+type UserUpdateDAO struct {
+	Name     string `form:"name"`
+	Username string `form:"username"`
 }
 
 func (User) Table() string {
 	return "users"
-}
-
-func (User) Pk() string {
-	return "Id"
 }

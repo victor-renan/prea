@@ -2,8 +2,11 @@ package repositories
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"fmt"
 	"prea/internal/common"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -29,60 +32,52 @@ func init() {
 
 func (dbg DBGeneric[T]) GetAll() ([]T, error) {
 	sql := "select * from " + dbg.Model.Table() + " order by id"
-	rows, err := Conn.Query(Ctx, sql)
+	rows, _ := Conn.Query(Ctx, sql)
 
-	items := []T{}
-
-	for rows.Next() {
-		var item T
-		err := rows.Scan(ModelToDest(&item)...)
-		if err != nil {
-			return items, err
-		}
-		items = append(items, item)
-	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByPos[T])
 
 	return items, err
 }
 
 func (dbg DBGeneric[T]) GetById(id string) (T, error) {
 	sql := "select * from " + dbg.Model.Table() + " where id=$1"
+	rows, _ := Conn.Query(Ctx, sql, id)
 
-	var item T
-	err := Conn.QueryRow(Ctx, sql, id).Scan(ModelToDest(&item)...)
+	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[T])
 
 	return item, err
 }
 
-func (dbg DBGeneric[T]) Create(data T) (T, error) {
-	keys, values := ModelToInsert(data)
+func (dbg DBGeneric[T]) Create(data any) (T, error) {
+	k, v, vals := ModelToInsert[T](data)
 
-	sql := "insert into " + dbg.Model.Table() + keys + " values " + values
+	sql := "insert into " + dbg.Model.Table() + k + " values " + v + "returning *"
 
-	_, err := Conn.Exec(Ctx, sql)
+	rows, err := Conn.Query(Ctx, sql, vals...)
 
 	if err != nil {
 		return dbg.Model, err
 	}
 
-	last, err := dbg.GetLast()
+	last, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
 
 	return last, err
 }
 
-func (dbg DBGeneric[T]) Update(id string, partial T) (T, error) {
-	states := ModelToUpdate(partial)
+func (dbg DBGeneric[T]) Update(id string, partial any) (T, error) {
+	ks, vals := ModelToUpdate[T](partial)
 
-	sql := "update " + dbg.Model.Table() + " set " + states + " where id=$1"
-	_, err := Conn.Exec(Ctx, sql, id)
+	sql := "update " + dbg.Model.Table() + " set " + ks + " where id=$" + fmt.Sprint(1 + len(vals)) + " returning *"
+
+	rows, err := Conn.Query(Ctx, sql, append(vals, id)...)
 
 	if err != nil {
 		return dbg.Model, err
 	}
 
-	updated, err := dbg.GetById(id)
+	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
 
-	return updated, err
+	return item, err
 }
 
 func (dbg DBGeneric[T]) Delete(id string) error {
@@ -96,20 +91,4 @@ func (dbg DBGeneric[T]) Delete(id string) error {
 	_, err = Conn.Exec(Ctx, sql, id)
 
 	return err
-}
-
-func (dbg DBGeneric[T]) GetLast() (T, error) {
-	sql := "select * from " + dbg.Model.Table() + " order by id desc limit 1"
-	rows, err := Conn.Query(Ctx, sql)
-
-	var item T
-	for rows.Next() {
-		err := rows.Scan(ModelToDest(&item)...)
-
-		if err != nil {
-			return item, err
-		}
-	}
-
-	return item, err
 }

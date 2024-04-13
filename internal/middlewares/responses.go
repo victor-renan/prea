@@ -10,7 +10,7 @@ const (
 
 type TextRes struct {
 	Msg string `json:"msg"`
-	MsgType  int `json:"msg_type"`
+	MsgT  int `json:"msgt"`
 }
 
 func Response(ctx *gin.Context, code int, data any) {

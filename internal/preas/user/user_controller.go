@@ -20,11 +20,7 @@ func (bc UserController) ForEngine(router *gin.Engine) {
 		users.GET("/", func(ctx *gin.Context) {
 			objs, err := bc.Service.GetAll()
 			if err != nil {
-				middlewares.WarnRes(ctx,
-					"Erro ao encontrar itens!",
-					http.StatusInternalServerError,
-				)
-
+				middlewares.WarnRes(ctx, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -34,11 +30,7 @@ func (bc UserController) ForEngine(router *gin.Engine) {
 		users.GET("/:id", func(ctx *gin.Context) {
 			obj, err := bc.Service.GetById(ctx.Param("id"))
 			if err != nil {
-				middlewares.WarnRes(ctx,
-					"Item não existe",
-					http.StatusNotFound,
-				)
-
+				middlewares.WarnRes(ctx, err.Error(), http.StatusNotFound)
 				return
 			}
 
@@ -46,22 +38,15 @@ func (bc UserController) ForEngine(router *gin.Engine) {
 		})
 
 		users.PUT("/", func(ctx *gin.Context) {
-			var entity User
-
-			if err := ctx.Bind(&entity); err != nil {
-				middlewares.WarnRes(ctx,
-					err.Error(),
-					http.StatusNotFound,
-				)
+			var entity UserCreateDAO
+			if err := ctx.ShouldBind(&entity); err != nil {
+				middlewares.WarnRes(ctx, err.Error(), http.StatusNotFound)
 				return
 			}
 
 			obj, err := bc.Service.Create(entity)
 			if err != nil {
-				middlewares.WarnRes(ctx,
-					err.Error(),
-					http.StatusInternalServerError,
-				)
+				middlewares.WarnRes(ctx, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -69,22 +54,15 @@ func (bc UserController) ForEngine(router *gin.Engine) {
 		})
 
 		users.PATCH("/:id", func(ctx *gin.Context) {
-			var entity User
-
-			if err := ctx.Bind(&entity); err != nil {
-				middlewares.WarnRes(ctx,
-					err.Error(),
-					http.StatusNotFound,
-				)
+			var entity UserUpdateDAO
+			if err := ctx.ShouldBind(&entity); err != nil {
+				middlewares.WarnRes(ctx, err.Error(), http.StatusNotFound)
 				return
 			}
 
 			obj, err := bc.Service.Update(ctx.Param("id"), entity)
 			if err != nil {
-				middlewares.WarnRes(ctx,
-					err.Error(),
-					http.StatusNotFound,
-				)
+				middlewares.WarnRes(ctx, err.Error(), http.StatusNotFound)
 				return
 			}
 
@@ -93,17 +71,11 @@ func (bc UserController) ForEngine(router *gin.Engine) {
 
 		users.DELETE("/:id", func(ctx *gin.Context) {
 			if err := bc.Service.Delete(ctx.Param("id")); err != nil {
-				middlewares.WarnRes(ctx,
-					err.Error(),
-					http.StatusNotFound,
-				)
+				middlewares.WarnRes(ctx, err.Error(), http.StatusNotFound)
 				return
 			}
 
-			middlewares.SuccRes(ctx,
-				"Item deletado com sucesso!",
-				http.StatusOK,
-			)
+			middlewares.SuccRes(ctx, "Item deletado com sucesso!", http.StatusOK)
 		})
 	}
 }
