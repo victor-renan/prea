@@ -31,7 +31,7 @@ func (dbg DBGeneric[T]) GetAll() ([]T, error) {
 	sql := "select * from " + dbg.Model.Table() + " order by id"
 	rows, err := Conn.Query(Ctx, sql)
 
-	var items []T
+	items := []T{}
 
 	for rows.Next() {
 		var item T
@@ -45,7 +45,7 @@ func (dbg DBGeneric[T]) GetAll() ([]T, error) {
 	return items, err
 }
 
-func (dbg DBGeneric[T]) GetById(id int64) (T, error) {
+func (dbg DBGeneric[T]) GetById(id string) (T, error) {
 	sql := "select * from " + dbg.Model.Table() + " where id=$1"
 
 	var item T
@@ -70,7 +70,7 @@ func (dbg DBGeneric[T]) Create(data T) (T, error) {
 	return last, err
 }
 
-func (dbg DBGeneric[T]) Update(id int64, partial T) (T, error) {
+func (dbg DBGeneric[T]) Update(id string, partial T) (T, error) {
 	states := ModelToUpdate(partial)
 
 	sql := "update " + dbg.Model.Table() + " set " + states + " where id=$1"
@@ -85,7 +85,7 @@ func (dbg DBGeneric[T]) Update(id int64, partial T) (T, error) {
 	return updated, err
 }
 
-func (dbg DBGeneric[T]) Delete(id int64) error {
+func (dbg DBGeneric[T]) Delete(id string) error {
 	_, err := dbg.GetById(id)
 
 	if err != nil {

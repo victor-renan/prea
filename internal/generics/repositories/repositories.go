@@ -1,11 +1,25 @@
 package repositories
 
 import (
+	"fmt"
 	"log"
 	"prea/internal/common"
 	"reflect"
 	"strings"
 	"time"
+)
+
+const (
+	UUID      = "uuid"
+	SERIAL    = "serial"
+	VARCHAR   = "varchar"
+	TEXT      = "text"
+	INT       = "int"
+	FLOAT     = "float"
+	DECIMAL   = "decimal"
+	NULL      = "null"
+	DATE      = "date"
+	TIMESTAMP = "timestamp"
 )
 
 func GetLogger() *log.Logger {
@@ -19,10 +33,10 @@ type IModelInjectable interface {
 
 type IGenericRepository[T IModelInjectable] interface {
 	GetAll() ([]T, error)
-	GetById(id int64) (T, error)
+	GetById(id string) (T, error)
 	Create(data T) (T, error)
-	Update(id int64, partial T) (T, error)
-	Delete(id int64) error
+	Update(id string, partial T) (T, error)
+	Delete(id string) error
 	GetLast() (T, error)
 }
 
@@ -30,7 +44,7 @@ func ModelToDest[T any](data *T) []any {
 	addrs := reflect.ValueOf(data)
 
 	var vals []any
-	
+
 	elem := addrs.Elem()
 	for i := range elem.NumField() {
 		vals = append(vals, elem.Field(i).Addr().Interface())
@@ -39,52 +53,66 @@ func ModelToDest[T any](data *T) []any {
 	return vals
 }
 
-func ModelToInsert[T IModelInjectable](data T) (string, string) {
-	refls := reflect.TypeOf(data)
-	vals := reflect.ValueOf(data)
+func ModelToKV(data IModelInjectable) (keys []string, vals []string) {
+	r := reflect.TypeOf(data)
+	v := reflect.ValueOf(data)
 
-	var k = "("
-	var v = "("
-	var sep = ","
+	for i := range r.NumField() {
+		if r.Field(i).Name != data.Pk() && !v.Field(i).IsZero() {
+			dbField := r.Field(i).Tag.Get("db")
+			dbType := r.Field(i).Tag.Get("db_type")
 
-	for i := range refls.NumField() {
-		if refls.Field(i).Name != data.Pk() && !vals.Field(i).IsZero() {
-			val := vals.Field(i).String()
-			if reflect.TypeOf(val).Kind() == reflect.String {
-				val = `'` + val + `'`
+			var parsedKey string
+
+			parsedKey = `"` + strings.ToLower(r.Field(i).Name) + `"`
+
+			if dbField != "" {
+				parsedKey = `"` + dbField + `"`
 			}
 
-			k += strings.ToLower(refls.Field(i).Name) + sep
-			v += val + sep
+			keys = append(keys, parsedKey)
+
+			var parsedValue string
+
+			switch dbType {
+			case UUID, VARCHAR, TEXT:
+				parsedValue = "'" + fmt.Sprint(v.Field(i).Interface()) + "'"
+			case DATE, TIMESTAMP:
+				format := time.DateTime
+				if dbType == DATE {
+					format = time.DateOnly
+				}
+				parsedValue = "'" + v.Field(i).Interface().(time.Time).Format(format) + "'"
+			default:
+				parsedValue = fmt.Sprint(v.Field(i).Interface())
+			}
+
+			vals = append(vals, parsedValue)
 		}
 	}
 
-	return strings.TrimSuffix(k, sep) + ")", strings.TrimSuffix(v, sep) + ")"
+	return
+}
+
+func ModelToInsert[T IModelInjectable](data T) (string, string) {
+	ks, vs := ModelToKV(data)
+
+	table := strings.Join(ks, ",")
+	values := strings.Join(vs, ",")
+
+	fmt.Print(values)
+
+	return "(" + table + ")", "(" + values + ")"
 }
 
 func ModelToUpdate[T IModelInjectable](data T) string {
-	refls := reflect.TypeOf(data)
-	vals := reflect.ValueOf(data)
+	ks, vs := ModelToKV(data)
 
-	var update = ""
-	var sep = ","
+	var final string
 
-	for i := range refls.NumField() {
-		if refls.Field(i).Name != data.Pk() && !vals.Field(i).IsZero() {
-			key := strings.ToLower(refls.Field(i).Name)
-			val := vals.Field(i).String()
-
-			if refls.Field(i).Type.Kind() == reflect.String {
-				val = `'` + val + `'`
-			}
-
-			if _, err := time.Parse(time.DateTime, val); err == nil {
-				val = `'` + val + `'`
-			}
-
-			update += key + "=" + val + sep
-		}
+	for i := range ks {
+		final += ks[i] + "=" + vs[i] + ","
 	}
 
-	return strings.TrimSuffix(update, sep)
+	return strings.TrimSuffix(final, ",")
 }
