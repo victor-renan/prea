@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"prea/internal/preas/user"
+	"github.com/gin-gonic/gin"
 )
 
 type IServer interface {

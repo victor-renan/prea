@@ -3,7 +3,6 @@ package security
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"prea/internal/common"
-	"time"
 )
 
 const (
@@ -24,15 +23,12 @@ type DataClaims struct {
 	*jwt.RegisteredClaims
 }
 
-func (j Jwt[M]) CreateToken(object M, expiration time.Time) (string, error) {
+func (j Jwt[M]) CreateToken(object M, claims jwt.RegisteredClaims) (string, error) {
 	token := jwt.New(jwt.GetSigningMethod(DefaultAlg))
 
 	token.Claims = &DataClaims{
 		object,
-		&jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expiration),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
+		&claims,
 	}
 
 	encoded, err := token.SignedString(SignKey)
