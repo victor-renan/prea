@@ -5,8 +5,8 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"golang.org/x/crypto/argon2"
+	"strings"
 )
 
 type Argon struct {
@@ -106,11 +106,13 @@ func argon2Compare(passwd string, hashed string) (bool, error) {
 }
 
 type ErrHash struct{}
+
 func (ErrHash) Error() string {
 	return "Invalid hash"
 }
 
 type ErrVer struct{}
+
 func (ErrVer) Error() string {
 	return "Invalid algorithm version"
 }
