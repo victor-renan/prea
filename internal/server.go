@@ -1,9 +1,10 @@
 package app
 
 import (
-	"log"
-	"prea/internal/preas/user"
 	"github.com/gin-gonic/gin"
+	"log"
+	"prea/internal/preas/auth"
+	"prea/internal/preas/user"
 )
 
 type IServer interface {
@@ -18,6 +19,7 @@ func (srv MainServer) Run() {
 	router := gin.Default()
 
 	user.Mount(router)
+	auth.Mount(router)
 
 	err := router.Run(srv.Port)
 

@@ -22,7 +22,9 @@ type IModelInjectable interface {
 
 type IGenericRepository[T IModelInjectable] interface {
 	GetAll() ([]T, error)
+	Where(data any) ([]T, error)
 	GetById(id string) (T, error)
+	GetFirst(data any) (T, error)
 	Create(data any) (T, error)
 	Update(id string, partial any) (T, error)
 	Delete(id string) error
@@ -46,7 +48,7 @@ func ModelToKV[T IModelInjectable](data any) (keys []string, vals []any) {
 	v := reflect.ValueOf(data)
 
 	for i := range v.NumField() {
-		part, find := r.FieldByName(v.Type().Field(i).Name);
+		part, find := r.FieldByName(v.Type().Field(i).Name)
 		if find {
 			if part.Type == v.Field(i).Type() && part.Name != PKName && !v.Field(i).IsZero() {
 				dbField := r.Field(i).Tag.Get("db")
@@ -81,7 +83,7 @@ func ModelToInsert[T IModelInjectable](data any) (string, string, []any) {
 	return "(" + table + ")", "(" + strings.TrimSuffix(vals, ",") + ")", vs
 }
 
-func ModelToUpdate[T IModelInjectable](data any) (string, []any) {
+func ModelToWhere[T IModelInjectable](data any) (string, []any) {
 	ks, vs := ModelToKV[T](data)
 
 	var final string

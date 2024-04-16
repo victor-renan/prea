@@ -34,7 +34,18 @@ func (dbg DBGeneric[T]) GetAll() ([]T, error) {
 	sql := "select * from " + dbg.Model.Table() + " order by id"
 	rows, _ := Conn.Query(Ctx, sql)
 
-	items, err := pgx.CollectRows(rows, pgx.RowToStructByPos[T])
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
+
+	return items, err
+}
+
+func (dbg DBGeneric[T]) Where(data any) ([]T, error) {
+	ks, vs := ModelToWhere[T](data)
+
+	sql := "select * from " + dbg.Model.Table() + " where " + ks + " order by id"
+	rows, _ := Conn.Query(Ctx, sql, vs...)
+
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
 
 	return items, err
 }
@@ -43,7 +54,18 @@ func (dbg DBGeneric[T]) GetById(id string) (T, error) {
 	sql := "select * from " + dbg.Model.Table() + " where id=$1"
 	rows, _ := Conn.Query(Ctx, sql, id)
 
-	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByPos[T])
+	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
+
+	return item, err
+}
+
+func (dbg DBGeneric[T]) GetFirst(data any) (T, error) {
+	ks, vs := ModelToWhere[T](data)
+
+	sql := "select * from " + dbg.Model.Table() + " where " + ks + " order by id limit 1"
+	rows, _ := Conn.Query(Ctx, sql, vs...)
+
+	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
 
 	return item, err
 }
@@ -65,9 +87,9 @@ func (dbg DBGeneric[T]) Create(data any) (T, error) {
 }
 
 func (dbg DBGeneric[T]) Update(id string, partial any) (T, error) {
-	ks, vals := ModelToUpdate[T](partial)
+	ks, vals := ModelToWhere[T](partial)
 
-	sql := "update " + dbg.Model.Table() + " set " + ks + " where id=$" + fmt.Sprint(1 + len(vals)) + " returning *"
+	sql := "update " + dbg.Model.Table() + " set " + ks + " where id=$" + fmt.Sprint(1+len(vals)) + " returning *"
 
 	rows, err := Conn.Query(Ctx, sql, append(vals, id)...)
 

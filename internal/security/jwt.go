@@ -18,15 +18,15 @@ func init() {
 
 type Jwt[M any] struct{}
 
-type DataClaims struct {
-	Data any `json:"data"`
+type DataClaims[M any] struct {
+	Data M `json:"data"`
 	*jwt.RegisteredClaims
 }
 
-func (j Jwt[M]) CreateToken(object M, claims jwt.RegisteredClaims) (string, error) {
+func (Jwt[M]) CreateToken(object M, claims jwt.RegisteredClaims) (string, error) {
 	token := jwt.New(jwt.GetSigningMethod(DefaultAlg))
 
-	token.Claims = &DataClaims{
+	token.Claims = &DataClaims[M]{
 		object,
 		&claims,
 	}
@@ -39,15 +39,15 @@ func (j Jwt[M]) CreateToken(object M, claims jwt.RegisteredClaims) (string, erro
 	return encoded, nil
 }
 
-func (j Jwt[M]) DecodeToken(token string) (DataClaims, error) {
+func (Jwt[M]) DecodeToken(token string) (DataClaims[M], error) {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		return SignKey, nil
 	}
 
-	parsed, err := jwt.ParseWithClaims(token, &DataClaims{}, keyFunc)
+	parsed, err := jwt.ParseWithClaims(token, &DataClaims[M]{}, keyFunc)
 	if err != nil {
-		return DataClaims{}, err
+		return DataClaims[M]{}, err
 	}
 
-	return *parsed.Claims.(*DataClaims), nil
+	return *parsed.Claims.(*DataClaims[M]), nil
 }
