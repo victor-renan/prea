@@ -3,36 +3,19 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"prea/internal/common"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	EnvConn string = "PGCONN"
-)
-
-var Ctx context.Context
-var Conn *pgxpool.Pool
-
 type DBGeneric[T IModelInjectable] struct {
-	Model T
-}
-
-func init() {
-	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, common.GetEnv(EnvConn))
-
-	common.ThrowException(err, GetLogger())
-
-	Conn = pool
-	Ctx = ctx
+	Conn  *pgxpool.Pool
+	Ctx   context.Context
+	model T
 }
 
 func (dbg DBGeneric[T]) GetAll() ([]T, error) {
-	sql := "select * from " + dbg.Model.Table() + " order by id"
-	rows, _ := Conn.Query(Ctx, sql)
+	sql := "select * from " + dbg.model.Table() + " order by id"
+	rows, _ := dbg.Conn.Query(dbg.Ctx, sql)
 
 	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
 
@@ -42,8 +25,8 @@ func (dbg DBGeneric[T]) GetAll() ([]T, error) {
 func (dbg DBGeneric[T]) Where(data any) ([]T, error) {
 	ks, vs := ModelToWhere[T](data)
 
-	sql := "select * from " + dbg.Model.Table() + " where " + ks + " order by id"
-	rows, _ := Conn.Query(Ctx, sql, vs...)
+	sql := "select * from " + dbg.model.Table() + " where " + ks + " order by id"
+	rows, _ := dbg.Conn.Query(dbg.Ctx, sql, vs...)
 
 	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[T])
 
@@ -51,8 +34,8 @@ func (dbg DBGeneric[T]) Where(data any) ([]T, error) {
 }
 
 func (dbg DBGeneric[T]) GetById(id string) (T, error) {
-	sql := "select * from " + dbg.Model.Table() + " where id=$1"
-	rows, _ := Conn.Query(Ctx, sql, id)
+	sql := "select * from " + dbg.model.Table() + " where id=$1"
+	rows, _ := dbg.Conn.Query(dbg.Ctx, sql, id)
 
 	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
 
@@ -62,8 +45,8 @@ func (dbg DBGeneric[T]) GetById(id string) (T, error) {
 func (dbg DBGeneric[T]) GetFirst(data any) (T, error) {
 	ks, vs := ModelToWhere[T](data)
 
-	sql := "select * from " + dbg.Model.Table() + " where " + ks + " order by id limit 1"
-	rows, _ := Conn.Query(Ctx, sql, vs...)
+	sql := "select * from " + dbg.model.Table() + " where " + ks + " order by id limit 1"
+	rows, _ := dbg.Conn.Query(dbg.Ctx, sql, vs...)
 
 	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
 
@@ -73,12 +56,12 @@ func (dbg DBGeneric[T]) GetFirst(data any) (T, error) {
 func (dbg DBGeneric[T]) Create(data any) (T, error) {
 	k, v, vals := ModelToInsert[T](data)
 
-	sql := "insert into " + dbg.Model.Table() + k + " values " + v + "returning *"
+	sql := "insert into " + dbg.model.Table() + k + " values " + v + "returning *"
 
-	rows, err := Conn.Query(Ctx, sql, vals...)
+	rows, err := dbg.Conn.Query(dbg.Ctx, sql, vals...)
 
 	if err != nil {
-		return dbg.Model, err
+		return dbg.model, err
 	}
 
 	last, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
@@ -89,12 +72,12 @@ func (dbg DBGeneric[T]) Create(data any) (T, error) {
 func (dbg DBGeneric[T]) Update(id string, partial any) (T, error) {
 	ks, vals := ModelToWhere[T](partial)
 
-	sql := "update " + dbg.Model.Table() + " set " + ks + " where id=$" + fmt.Sprint(1+len(vals)) + " returning *"
+	sql := "update " + dbg.model.Table() + " set " + ks + " where id=$" + fmt.Sprint(1+len(vals)) + " returning *"
 
-	rows, err := Conn.Query(Ctx, sql, append(vals, id)...)
+	rows, err := dbg.Conn.Query(dbg.Ctx, sql, append(vals, id)...)
 
 	if err != nil {
-		return dbg.Model, err
+		return dbg.model, err
 	}
 
 	item, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[T])
@@ -109,8 +92,8 @@ func (dbg DBGeneric[T]) Delete(id string) error {
 		return err
 	}
 
-	sql := "delete from " + dbg.Model.Table() + " where id=$1"
-	_, err = Conn.Exec(Ctx, sql, id)
+	sql := "delete from " + dbg.model.Table() + " where id=$1"
+	_, err = dbg.Conn.Exec(dbg.Ctx, sql, id)
 
 	return err
 }

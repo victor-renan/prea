@@ -1,10 +1,12 @@
 package app
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
+	"os"
+	"prea/internal/common"
 	"prea/internal/preas/auth"
 	"prea/internal/preas/user"
+	"github.com/gin-gonic/gin"
 )
 
 type IServer interface {
@@ -17,13 +19,18 @@ type MainServer struct {
 
 func (srv MainServer) Run() {
 	router := gin.Default()
+	dbStr := common.GetEnv("PGCONN")
 
-	user.Mount(router)
-	auth.Mount(router)
+	mUser := user.Prepare(dbStr)
+	mUser.Mount(router)
+
+	mAuth := auth.Prepare(mUser)
+	mAuth.Mount(router)
 
 	err := router.Run(srv.Port)
 
 	if err != nil {
-		log.Default().Fatal(err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }
