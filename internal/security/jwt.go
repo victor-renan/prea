@@ -19,7 +19,7 @@ func init() {
 type Jwt[M any] struct{}
 
 type DataClaims[M any] struct {
-	Data M `json:"data"`
+	Payload M `json:"payload"`
 	*jwt.RegisteredClaims
 }
 

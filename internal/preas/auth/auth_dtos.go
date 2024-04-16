@@ -17,3 +17,7 @@ type LoginBody struct {
 	Username string `binding:"required" form:"username"`
 	Password string `binding:"required" form:"password"`
 }
+
+type ValidateBody struct {
+	Token string `binding:"required" form:"token"`
+}

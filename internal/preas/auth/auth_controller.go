@@ -29,7 +29,6 @@ func (bc AuthController) ForEngine(router *gin.Engine) {
 					Text: err.Error(),
 					Code: helpers.WarningCode,
 				})
-
 				return
 			}
 
@@ -41,7 +40,6 @@ func (bc AuthController) ForEngine(router *gin.Engine) {
 					Text: "Credenciais incorretas",
 					Code: helpers.WarningCode,
 				})
-
 				return
 			}
 
@@ -53,30 +51,28 @@ func (bc AuthController) ForEngine(router *gin.Engine) {
 					Text: err.Error(),
 					Code: helpers.WarningCode,
 				})
-
 				return
 			}
 
 			tokenData := LoginPayload{
-				Username: usr.Username,
-				Profile: usr.Profile,
+				Username:  usr.Username,
+				Profile:   usr.Profile,
 				LastLogin: lastlogin,
 			}
 
 			claims := jwt.RegisteredClaims{
-				IssuedAt: jwt.NewNumericDate(tm),
+				IssuedAt:  jwt.NewNumericDate(tm),
 				ExpiresAt: jwt.NewNumericDate(tm.Add(time.Hour * 1)),
-				Subject: usr.Username,
+				Subject:   usr.Username,
 			}
 
 			token, err := security.Jwt[LoginPayload]{}.CreateToken(tokenData, claims)
-			
+
 			if err != nil || !match {
 				helpers.Response(ctx, http.StatusUnauthorized, helpers.Message{
 					Text: err.Error(),
 					Code: helpers.WarningCode,
 				})
-
 				return
 			}
 
@@ -84,9 +80,34 @@ func (bc AuthController) ForEngine(router *gin.Engine) {
 				Text: "Login realizado com sucesso!",
 				Code: helpers.SuccessCode,
 				Data: LoginResponse{
-					Token: token,
+					Token:   token,
 					Payload: tokenData,
 				},
+			})
+		})
+		gp.POST("/validate", func(ctx *gin.Context) {
+			var body ValidateBody
+			if err := ctx.ShouldBind(&body); err != nil {
+				helpers.Response(ctx, http.StatusBadRequest, helpers.Message{
+					Text: err.Error(),
+					Code: helpers.WarningCode,
+				})
+				return
+			}
+
+			decode, err := security.Jwt[LoginPayload]{}.DecodeToken(body.Token)
+			if err != nil {
+				helpers.Response(ctx, http.StatusOK, helpers.Message{
+					Text: "Token inválido!",
+					Code: helpers.SuccessCode,
+				})
+				return
+			}
+
+			helpers.Response(ctx, http.StatusOK, helpers.DataMessage{
+				Text: "Token válido!",
+				Code: helpers.SuccessCode,
+				Data: decode,
 			})
 		})
 	}
