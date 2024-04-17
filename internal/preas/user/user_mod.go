@@ -8,13 +8,12 @@ import (
 	"prea/internal/generics/repositories"
 )
 
-type UserModule struct {
+type UserMod struct {
 	Controller UserController
 	Service    UserService
-	Repo       repositories.DBGeneric[User]
 }
 
-func Prepare(connStr string) UserModule {
+func Prepare(connStr string) UserMod {
 	ctx := context.Background()
 	conn, err := pgxpool.New(ctx, connStr)
 
@@ -22,19 +21,20 @@ func Prepare(connStr string) UserModule {
 		log.Fatal(err)
 	}
 
-	ub := UserModule{}
+	ub := UserMod{}
 
-	ub.Repo = repositories.DBGeneric[User]{
-		Conn: conn,
-		Ctx:  ctx,
+	ub.Service = UserService{
+		Repo: repositories.DBGeneric[User]{
+			Conn: conn,
+			Ctx:  ctx,
+		},
 	}
 
-	ub.Service = UserService{Repo: ub.Repo}
 	ub.Controller = UserController{Service: ub.Service}
 
 	return ub
 }
 
-func (ub UserModule) Mount(router *gin.Engine) {
+func (ub UserMod) Mount(router *gin.Engine) {
 	ub.Controller.ForEngine(router)
 }

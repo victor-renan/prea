@@ -10,7 +10,7 @@ type AuthModule struct {
 	UserService user.UserService
 }
 
-func Prepare(mUser user.UserModule) AuthModule {
+func Prepare(mUser user.UserMod) AuthModule {
 	am := AuthModule{}
 
 	am.UserService = mUser.Service

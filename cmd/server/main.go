@@ -17,6 +17,7 @@ const (
 	ModelTmplPath      = "tmpl/model.tmpl"
 	ServiceTmplPath    = "tmpl/service.tmpl"
 	ControllerTmplPath = "tmpl/controller.tmpl"
+	ModTmplPath = "tmpl/mod.tmpl"
 )
 
 func main() {
@@ -82,6 +83,13 @@ func main() {
 
 								err = createAndCopy(
 									path.Join(dir, fmt.Sprintf("%v_controller.go", name)), ControllerTmplPath, st)
+
+								if err != nil {
+									return err
+								}
+
+								err = createAndCopy(
+									path.Join(dir, fmt.Sprintf("%v_mod.go", name)), ModTmplPath, st)
 
 								if err != nil {
 									return err
