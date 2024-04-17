@@ -10,7 +10,7 @@ type UserController struct {
 	Service IUserService
 }
 
-func (uc UserController) RouteName() string {
+func (UserController) RouteName() string {
 	return "users"
 }
 

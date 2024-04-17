@@ -1,8 +1,6 @@
 package app
 
 import (
-	"log"
-	"os"
 	"prea/internal/common"
 	"prea/internal/preas/auth"
 	"prea/internal/preas/user"
@@ -17,7 +15,7 @@ type MainServer struct {
 	Port string
 }
 
-func (srv MainServer) Run() {
+func (srv MainServer) Run() error {
 	router := gin.Default()
 	dbStr := common.GetEnv("PGCONN")
 
@@ -29,8 +27,5 @@ func (srv MainServer) Run() {
 
 	err := router.Run(srv.Port)
 
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+	return err
 }

@@ -1,0 +1,13 @@
+package {{.Pkg}}
+
+import (
+    "prea/internal/generics/repositories"
+)
+
+type I{{.Name}}Service interface {
+
+}
+
+type {{.Name}}Service struct {
+    Repo repositories.IGenericRepository[{{.Name}}]
+}

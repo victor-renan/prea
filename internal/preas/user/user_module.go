@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
-	"os"
 	"prea/internal/generics/repositories"
 )
 
@@ -21,7 +20,6 @@ func Prepare(connStr string) UserModule {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	ub := UserModule{}
